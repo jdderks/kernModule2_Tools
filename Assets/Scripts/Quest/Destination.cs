@@ -1,21 +1,56 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
+using UnityEngine.Events;
 
 public class Destination : MonoBehaviour
 {
     [SerializeField]
-    private string destinationName;
+    public string destinationName;
+
     [SerializeField]
-    private int workProgress = 0;
+    private TextMeshProUGUI destinationText;
+    [SerializeField]
+    private bool playerIsHere;
+
+
+    //These variables will do something in the future.
+    public bool hasWind = false;
+    public bool hasSunLight = false;
+
+    [SerializeField]
+    public UnityEvent destinationEvent = null;
+
     public string CommunityName { get => destinationName; set => destinationName = value; }
-    public int WorkProgress { get => workProgress; set => workProgress = value; }
+    public bool PlayerIsHere { get => playerIsHere; set => playerIsHere = value; }
+
+    private void Awake()
+    {
+        if (destinationText != null)
+        {
+            destinationText.text = destinationName;
+        }
+    }
 
     private void OnTriggerStay(Collider other)
     {
+        
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
         if (other.gameObject.CompareTag("Player"))
         {
-            workProgress++;
+            playerIsHere = true;
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.CompareTag("Player"))
+        {
+            playerIsHere = false;
         }
     }
 

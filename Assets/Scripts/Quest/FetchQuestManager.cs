@@ -1,78 +1,77 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using NaughtyAttributes;
+using UnityEngine.UI;
+
 
 public class FetchQuestManager : MonoBehaviour
 {
-    
+
+
+    [SerializeField]
+    private GameObject player;
+
     [Header("Quests")]
-    [SerializeField]
-    [ProgressBar("Progress", 100, EColor.Red)]
-    private float questProgress = 0;
+    public List<FetchQuest> Quests = new List<FetchQuest>();
 
-    [SerializeField]
+    [HideInInspector]
+    private FetchQuest currentQuest = null;
 
-    private List<FetchQuest> Quests = new List<FetchQuest>();
+    public FetchQuest CurrentQuest { get => currentQuest; set => currentQuest = value; }
+    public GameObject Player { get => player; set => player = value; }
 
-    [Header("Communities")]
-    [SerializeField]
-    private List<Destination> destinations = new List<Destination>();
-
-    [SerializeField]
-    private FetchQuest currentQuest;
-
-    [SerializeField]
-    private Destination currentDestination;
-
-    [Button(enabledMode: EButtonEnableMode.Playmode)]
-    private void StartRandomQuest()
+    private void Start()
     {
-        currentQuest = Quests[Random.Range(0, Quests.Count)];
-        if (currentQuest.DestinationsAreRandom)
-        {
-            int random1 = Random.Range(0, destinations.Count);
-            int random2 = Random.Range(0, destinations.Count);
-            if (random1 == random2)
-            {
-                if (random2 > destinations.Count)
-                {
-                    random2 = 0;
-                } else
-                {
-                    random2++;
-                }
-                
-            }
-            currentQuest.communityToDeliverTo = destinations[random1];
-            currentQuest.communityToGetFrom = destinations[random2];
-        }
-        currentQuest.currentStep = FetchQuestSteps.notRetreived;
+        CurrentQuest = Quests[0];
     }
 
     private void Update()
     {
-        if (currentQuest)
-        {
-            if (currentQuest.currentStep == FetchQuestSteps.notRetreived)
-            {
-                currentDestination = currentQuest.communityToGetFrom;
-            }
-        }
+        QuestProgress();
     }
 
-    [Button(enabledMode: EButtonEnableMode.Editor)]
-    private void UpdateCommunitiesList()
+    private void QuestProgress()
     {
-        GameObject[] _communities = GameObject.FindGameObjectsWithTag("Community");
-        for (int i = 0; i < _communities.Length; i++)
+        //TODO: Make this more readable by using &&
+        //ALTHOUGH: this loop has given me errors in some weird scenarios in other ways so I'm keeping it like this for now.
+        if (CurrentQuest != null)
         {
-            Destination com = _communities[i].GetComponent<Destination>();
-            if (!destinations.Contains(com))
+            for (int i = 0; i < CurrentQuest.destinations.Count; i++)
             {
-                destinations.Add(com);
+                if (CurrentQuest.destinations[i].PlayerIsHere)
+                {
+                    if (CurrentQuest.currentDestinationNumber == i)
+                    {
+                        Debug.Log("Player arrived at at: " + CurrentQuest.destinations[i].CommunityName);
+                        if (Player.GetComponent<Rigidbody>().velocity.x < 1 && Player.GetComponent<Rigidbody>().velocity.z < 1)
+                        {
+                            Debug.Log("Player delivered at: " + CurrentQuest.destinations[i].CommunityName);
+                            CurrentQuest.currentDestinationNumber++;
+                            if (CurrentQuest.currentDestinationNumber == currentQuest.destinations.Count)
+                            {
+                                currentQuest.isDone = true;
+                                currentQuest = null;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
+    private FetchQuest GetNewAvailableQuest()
+    {
+        List<FetchQuest> availableQuests = new List<FetchQuest>();
+
+        for (int i = 0; i < Quests.Count; i++)
+        {
+            if (!Quests[i].isDone)
+            {
+                availableQuests.Add(Quests[i]);
+            }
+        }
+        return availableQuests[Random.Range(0,availableQuests.Count)];
+    }
+ 
 }
